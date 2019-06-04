@@ -19,6 +19,8 @@ def FindLinks(url, n):
         Links.append('https://www.facebook.com' + i.find('a',{'class':'_5pcq'}).attrs['href'].split('?',2)[0])
     return Links
 def findChineseComment(target):
+    if target.find(u'檢視另') >=0 :
+        return True
     if target.find(u'查看更多留言') >=0 :
         return True
     if target.find(u'則回覆') >=0 :
@@ -139,7 +141,8 @@ def CrawlComment(soup):
             CommentContent = i.find('span', {'dir':'ltr'}).text
         except:
             CommentContent = 'Sticker'
-        Comment = pd.DataFrame(data = [{'CommentID':i.find('a', {'class':' _3mf5 _3mg0'}).attrs['data-hovercard'].split('id=',2)[1],
+        Comment = pd.DataFrame(data = [{
+                                 'CommentID':i.find('a', {'class':'_3mf5 _3mg0'}).attrs['data-hovercard'].split('id=',2)[1],
                                  'CommentName':i.find('img').attrs['alt'],
                                  'CommentTime':i.find('abbr',{'class':'livetimestamp'}).attrs['data-tooltip-content'],
                                  'CommentContent':CommentContent,
@@ -153,19 +156,19 @@ def CrawlComment(soup):
             CommentContent = i.find('span', {'dir':'ltr'}).text
         except:
             CommentContent = 'Sticker'
-        Comment = pd.DataFrame(data = [{'CommentID':i.find('a', {'class':' _3mf5 _3mg1'}).attrs['data-hovercard'].split('id=',2)[1],
+        Comment = pd.DataFrame(data = [{'CommentID':i.find('a', {'class':'_3mf5 _3mg1'}).attrs['data-hovercard'].split('id=',2)[1],
                                  'CommentName':i.find('img').attrs['alt'],
                                  'CommentTime':i.find('abbr',{'class':'livetimestamp'}).attrs['data-tooltip-content'],
                                  'CommentContent':CommentContent,
                                  'Link':driver.current_url}],
                         columns = ['CommentID', 'CommentName', 'CommentTime', 'CommentContent', 'Link'])
-        Comments = pd.concat([Comments, Comment], ignore_index=True)        
+        Comments = pd.concat([Comments, Comment], ignore_index=True)  
     return Comments
 
 driver = webdriver.Chrome()
 # Links = FindLinks(url = 'https://www.facebook.com/DoctorKoWJ/photos/a.136856586416330/1813523658749606/?type=3&source=57&__tn__=EH-R',
                 #   n = 20)
-Links = ["https://www.facebook.com/DoctorKoWJ/photos/a.136856586416330/1813523658749606/?type=3&source=57&__tn__=EH-R"]
+Links = ["https://www.facebook.com/PTTMeowgoDaily/posts/1355900197893635"]
 Links
 
 # 抓下來所有留言
@@ -181,8 +184,8 @@ for i in Links:
     except:
         print('Load Failed: ' + i)
 
-PostsInformation
-PostsComments
+# PostsInformation
+# PostsComments
 
-# PostsInformation.to_excel('C:/Users/TLYu0419/Desktop/PostsInformation.xlsx')
-# PostsComments.to_excel('C:/Users/TLYu0419/Desktop/PostsComments.xlsx')
+PostsInformation.to_json('./PostsInformation.json')
+PostsComments.to_json('./PostsComments.json')
