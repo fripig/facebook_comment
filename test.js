@@ -4,7 +4,8 @@ const md5 =require("md5");
 
 async function  ClickSkip(page){
     try{
-        let target = await page.$('#expanding_cta_close_button');
+        let target = await page.$('a#expanding_cta_close_button');
+        // console.log(target.content());
         await target.click();
     } catch{
         return;
@@ -25,17 +26,45 @@ async function ShowComment(page){
         
 }
 
+async function HasComment(page,button){
+    let result =  await page.evaluate(function(button){
+        const map = [
+            '則回覆',
+            '查看更多'
+        ];
+        for(i in map){
+            if(button.text.includes(map[i])) {
+                return {
+                    content: button.text,
+                    check:true
+                };
+            }
+        }
+        return {
+            content: button.text,
+            check:false
+        };
+
+    },button);
+    return result;
+}
+
 async function  ClickMore(page){
     //driver.find_elements_by_xpath('//div[@class="_5pcr userContentWrapper"]//div[@data-testid="UFI2CommentsList/root_depth_0"]//a[@role="button"]')
     let buttons = await page.$$('div._5pcr.userContentWrapper  div[data-testid="UFI2CommentsList/root_depth_0"] a[role="button"]')
+    let check = false;
     for(i in buttons){
         let button = buttons[i];
-        result = await page.evaluate(function(button){
-            return button.text;
-
-        },button);
-        console.log(result);
+        let result = await HasComment(page,button);
+        // console.log(result);
+        if(result.check){
+            check = true;
+            button.click();
+            await ClickSkip(page);
+        }
     }
+
+    return check
     //driver.find_element_by_xpath('//div[@style="display: block;"]//a[@id="expanding_cta_close_button"]').click()
 
 }
@@ -59,7 +88,11 @@ async function  ClickMore(page){
         // 用戶留言區
         userContent = await page.$('div._5pcr.userContentWrapper');
 
-        ClickMore(page);
+        let notLoop = true;
+        while(notLoop){
+            notLoop = ! await ClickMore(page);
+        }
+        
         
 
         result = await page.evaluate(function(userContent){
