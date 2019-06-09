@@ -4,7 +4,7 @@ const md5 =require("md5");
 
 async function  ClickSkip(page){
     try{
-        let target = await page.$('a#expanding_cta_close_button');
+        let target = await page.$('#expanding_cta_close_button');
         // console.log(target.content());
         await target.click();
     } catch{
@@ -30,7 +30,8 @@ async function HasComment(page,button){
     let result =  await page.evaluate(function(button){
         const map = [
             '則回覆',
-            '查看更多'
+            '查看更多',
+            '更多留言'
         ];
         for(i in map){
             if(button.text.includes(map[i])) {
@@ -59,11 +60,11 @@ async function  ClickMore(page){
         // console.log(result);
         if(result.check){
             check = true;
-            button.click();
+            await button.click();
+            await page.waitFor(1000);
             await ClickSkip(page);
         }
     }
-
     return check
     //driver.find_element_by_xpath('//div[@style="display: block;"]//a[@id="expanding_cta_close_button"]').click()
 
@@ -91,6 +92,7 @@ async function  ClickMore(page){
         let notLoop = true;
         while(notLoop){
             notLoop = ! await ClickMore(page);
+            console.log(notLoop);
         }
         
         
