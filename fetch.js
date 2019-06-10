@@ -131,10 +131,20 @@ async function  ClickMore(page){
 
         CommentContentList = await userContent.$$('div[data-testid="UFI2Comment/body"] a._6qw4');
 
+        let userMap = {};
         for(i in CommentContentList){
             let row = CommentContentList[i];
-            console.log(await getUserProfile(page,row));
+            let temp = await getUserProfile(page,row);
+            if(temp.href in userMap){
+                userMap[temp.href].count+=1;
+            }else{
+                temp.count=1;
+                userMap[temp.href] = temp;
+            }
+            
         }
+
+        console.log(userMap);
 
 
         await page.screenshot({ path: 'screenshot/'+md5(url)+'.png' });
