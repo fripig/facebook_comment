@@ -2,6 +2,23 @@
 const puppeteer = require('puppeteer');
 const md5 =require("md5");
 
+async function html(page,dom){
+    return await page.evaluate(d=>d.outerHTML,dom)
+}
+
+async function getUserProfile(page,dom){
+    // <a class="_6qw4" data-hovercard="/ajax/hovercard/user.php?id=100009389861058" href="/people/%E9%83%AD%E5%87%B1%E7%89%B9/100009389861058">郭凱特</a>
+    return await page.evaluate(d=>{
+        {
+            return{
+                username: d.textContent,
+            href : d.getAttribute('href'),
+            hovercard : d.getAttribute('data-hovercard')
+            }
+        };
+    },dom)
+}
+
 async function  ClickSkip(page){
     try{
         let target = await page.$('#expanding_cta_close_button');
@@ -31,14 +48,20 @@ async function HasComment(page,button){
         const map = [
             '則回覆',
             '查看更多',
-            '更多留言'
+            '更多留言',
+            '查看之前'
         ];
         for(i in map){
-            if(button.text.includes(map[i])) {
-                return {
-                    content: button.text,
-                    check:true
-                };
+            let content = button.text;
+            let result = {
+                content: button.text,
+                check:true
+            };
+            if(content.includes(map[i])) {
+                if(content.includes('隱藏')){
+                    result.check = false;
+                }
+                return result;
             }
         }
         return {
@@ -53,19 +76,24 @@ async function HasComment(page,button){
 async function  ClickMore(page){
     //driver.find_elements_by_xpath('//div[@class="_5pcr userContentWrapper"]//div[@data-testid="UFI2CommentsList/root_depth_0"]//a[@role="button"]')
     let buttons = await page.$$('div._5pcr.userContentWrapper  div[data-testid="UFI2CommentsList/root_depth_0"] a[role="button"]')
-    let check = false;
+    var check = false;
     for(i in buttons){
         let button = buttons[i];
         let result = await HasComment(page,button);
         // console.log(result);
         if(result.check){
             check = true;
+            // console.log(await html(page,button));
             await button.click();
-            await page.waitFor(1000);
-            await ClickSkip(page);
+            await page.waitFor(2000);
         }
     }
-    return check
+    console.log('comment length:'+buttons.length);
+    //先測試10則留言就好
+    if(buttons.length > 100) {
+        return false;
+    }
+    return check;
     //driver.find_element_by_xpath('//div[@style="display: block;"]//a[@id="expanding_cta_close_button"]').click()
 
 }
@@ -74,11 +102,11 @@ async function  ClickMore(page){
     const links = ["https://www.facebook.com/twherohan/posts/2454647268105756"];
 
     for (key in links) {
-        const browser = await puppeteer.launch()
+        const browser = await puppeteer.launch();
         const page = await browser.newPage()
         const url = links[key];
         await page.goto(url);
-        await page.setViewport({ width: 1461, height: 869 });
+        await page.setViewport({ width: 800, height: 4800 });
         let PostsInformation = {};
         let PostsComments = [];
 
@@ -90,23 +118,23 @@ async function  ClickMore(page){
         userContent = await page.$('div._5pcr.userContentWrapper');
 
         let notLoop = true;
+        //展開留言
         while(notLoop){
-            notLoop = ! await ClickMore(page);
-            console.log(notLoop);
+            notLoop =  await ClickMore(page);
+            // console.log(notLoop);
         }
         
+        userContent = await page.$('div._5pcr.userContentWrapper');
+
         
 
-        result = await page.evaluate(function(userContent){
-            return userContent.querySelectorAll('div[data-testid="UFI2Comment/root_depth_0"]');
 
-        },userContent);
+        CommentContentList = await userContent.$$('div[data-testid="UFI2Comment/body"] a._6qw4');
 
-        // console.log(result);
-
-        CommentContentList = await userContent.$$('div[data-testid="UFI2Comment/root_depth_0"]');
-
-        // console.log(CommentContentList);
+        for(i in CommentContentList){
+            let row = CommentContentList[i];
+            console.log(await getUserProfile(page,row));
+        }
 
 
         await page.screenshot({ path: 'screenshot/'+md5(url)+'.png' });
