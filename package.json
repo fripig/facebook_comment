@@ -1,0 +1,25 @@
+{
+  "name": "facebook_comment",
+  "version": "1.0.0",
+  "description": "fetch facebook comment",
+  "main": "index.js",
+  "dependencies": {
+    "md5": "^2.2.1",
+    "puppeteer": "^1.17.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "run": "node fetch.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fripig/facebook_comment.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/fripig/facebook_comment/issues"
+  },
+  "homepage": "https://github.com/fripig/facebook_comment#readme"
+}
