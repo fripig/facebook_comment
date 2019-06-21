@@ -1,7 +1,26 @@
 
 const puppeteer = require('puppeteer');
 const md5 =require("md5");
+var fs = require('fs');
 
+async function autoScroll(page){
+    await page.evaluate(async () => {
+        await new Promise((resolve, reject) => {
+            var totalHeight = 0;
+            var distance = 100;
+            var timer = setInterval(() => {
+                var scrollHeight = document.body.scrollHeight;
+                window.scrollBy(0, distance);
+                totalHeight += distance;
+
+                if(totalHeight >= scrollHeight){
+                    clearInterval(timer);
+                    resolve();
+                }
+            }, 100);
+        });
+    });
+}
 async function html(page,dom){
     return await page.evaluate(d=>d.outerHTML,dom)
 }
@@ -37,10 +56,24 @@ async function ShowComment(page){
             
             await target.click();
             await page.waitFor(1000);
+            
         } catch{
             return;
         }
         
+}
+
+async function ChangeOrder(page){
+    try{
+        let target = await page.$('div._5pcr.userContentWrapper  a[data-testid="UFI2CommentsCount/root"]');
+        
+        await target.click();
+        await page.waitFor(1000);
+        
+    } catch{
+        return;
+    }
+    
 }
 
 async function HasComment(page,button){
@@ -84,13 +117,21 @@ async function  ClickMore(page){
         if(result.check){
             check = true;
             // console.log(await html(page,button));
-            await button.click();
+            try {
+                await button.click();
+            
             await page.waitFor(2000);
+            await ClickSkip(page);
+            } catch (error) {
+                console.log(error);
+                await page.screenshot('error.png');
+            }
+            
         }
     }
     console.log('comment length:'+buttons.length);
     //先測試10則留言就好
-    if(buttons.length > 100) {
+    if(buttons.length > 5000) {
         return false;
     }
     return check;
@@ -106,12 +147,14 @@ async function  ClickMore(page){
         const page = await browser.newPage()
         const url = links[key];
         await page.goto(url);
-        await page.setViewport({ width: 800, height: 4800 });
+        await page.setViewport({ width: 800, height: 9600 });
         let PostsInformation = {};
         let PostsComments = [];
 
         await ClickSkip(page);
         await ShowComment(page);
+        // 變更排序
+
         // po文區塊
         userContent = await page.$('div._5pcr.userContentWrapper');
         // 用戶留言區
@@ -121,6 +164,7 @@ async function  ClickMore(page){
         //展開留言
         while(notLoop){
             notLoop =  await ClickMore(page);
+            // await autoScroll(page);
             // console.log(notLoop);
         }
         
@@ -128,25 +172,32 @@ async function  ClickMore(page){
 
         
 
-
-        CommentContentList = await userContent.$$('div[data-testid="UFI2Comment/body"] a._6qw4');
+        try {
+            CommentContentList = await userContent.$$('div[data-testid="UFI2Comment/body"] a._6qw4');
+        } catch (error) {
+            await page.screenshot({ path: 'screenshot/'+md5(url)+'.png' });
+        }
+        
 
         let userMap = {};
-        for(i in CommentContentList){
-            let row = CommentContentList[i];
-            let temp = await getUserProfile(page,row);
-            if(temp.href in userMap){
-                userMap[temp.href].count+=1;
-            }else{
-                temp.count=1;
-                userMap[temp.href] = temp;
+        if(CommentContentList){
+            for(i in CommentContentList){
+                let row = CommentContentList[i];
+                let temp = await getUserProfile(page,row);
+                if(temp.href in userMap){
+                    userMap[temp.href].count+=1;
+                }else{
+                    temp.count=1;
+                    userMap[temp.href] = temp;
+                }
+                
             }
-            
         }
 
-        console.log(userMap);
 
+        // console.log(userMap);
 
+        fs.writeFileSync('result/'+md5(url)+'.json', JSON.stringify(userMap));
         await page.screenshot({ path: 'screenshot/'+md5(url)+'.png' });
         await browser.close()
 
