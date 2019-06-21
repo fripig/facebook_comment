@@ -65,10 +65,12 @@ async function ShowComment(page){
 
 async function ChangeOrder(page){
     try{
-        let target = await page.$('div._5pcr.userContentWrapper  a[data-testid="UFI2CommentsCount/root"]');
+        let target = await page.$('div._5pcr.userContentWrapper  a[data-testid="UFI2ViewOptionsSelector/link"]');
         
         await target.click();
         await page.waitFor(1000);
+
+        let target = await page.$('div._5pcr.userContentWrapper  a[data-testid="menuitemcheckbox"]');
         
     } catch{
         return;
